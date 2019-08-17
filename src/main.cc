@@ -27,6 +27,7 @@
 #include "stb_image.h"
 #include "pdf.h"
 
+
 inline vec3 de_nan(const vec3& c) {
     vec3 temp = c;
     if (!(temp[0] == temp[0])) temp[0] = 0;
@@ -34,7 +35,6 @@ inline vec3 de_nan(const vec3& c) {
     if (!(temp[2] == temp[2])) temp[2] = 0;
     return temp;
 }
-
 
 
 vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
@@ -62,6 +62,30 @@ vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
         return vec3(0,0,0);
 }
 
+
+const vec3& catchNaN(const vec3& color, const vec3& nanColor) {
+    bool hasNaN = std::isnan(color[0]) || std::isnan(color[1]) || std::isnan(color[2]);
+    return hasNaN ? nanColor : color;
+}
+
+
+int intensity(double x) {
+    return (x <= 0) ? 0
+         : (x >= 1) ? 255
+         : int(256.0 * x);
+}
+
+
+void printColor(ostream& out, const vec3& color) {
+    const static auto nanColor = vec3(0, 1, 1);   // NaN-signalling Color
+    auto& colorVec = catchNaN(color, nanColor);
+
+    out << intensity(colorVec[0]) << " "
+        << intensity(colorVec[1]) << " "
+        << intensity(colorVec[2]);
+}
+
+
 void cornell_box(hitable **scene, camera **cam, float aspect) {
     int i = 0;
     hitable **list = new hitable*[8];
@@ -88,6 +112,7 @@ void cornell_box(hitable **scene, camera **cam, float aspect) {
     *cam = new camera(lookfrom, lookat, vec3(0,1,0),
                       vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
 }
+
 
 int main() {
     int nx = 500;
@@ -117,10 +142,9 @@ int main() {
             }
             col /= float(ns);
             col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-            int ir = int(255.99*col[0]);
-            int ig = int(255.99*col[1]);
-            int ib = int(255.99*col[2]);
-            std::cout << ir << " " << ig << " " << ib << "\n";
+
+            printColor(std::cout, col);
+            std::cout << "\n";
         }
     }
 }
